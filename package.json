@@ -1,0 +1,29 @@
+{
+  "name": "tienda-auth-root",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{js,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{js,json,yml,yaml}\"",
+    "test:unit": "npm --prefix shared test && npm --prefix auth-service test && npm --prefix user-service test && npm --prefix api-gateway test",
+    "test:integration": "jest --config jest.integration.config.js --runInBand"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "private": true,
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "jest": "^30.5.2",
+    "prettier": "^3.10.1",
+    "supertest": "^7.3.2"
+  }
+}
