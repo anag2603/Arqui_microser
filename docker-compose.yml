@@ -32,6 +32,58 @@ services:
       timeout: 5s
       retries: 10
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: tienda-auth
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      USER_SERVICE_URL: http://user-service:${USER_PORT}
+    ports:
+      - "${AUTH_PORT}:${AUTH_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: tienda-user
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    ports:
+      - "${USER_PORT}:${USER_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: tienda-gateway
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      AUTH_SERVICE_URL: http://auth-service:${AUTH_PORT}
+      USER_SERVICE_URL: http://user-service:${USER_PORT}
+    ports:
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+    depends_on:
+      - auth-service
+      - user-service
+      - redis
+
 volumes:
   postgres_data:
   redis_data:
