@@ -1,3 +1,6 @@
+process.env.USE_MOCKS = 'true';
+jest.mock('../src/cache', () => ({}));
+
 const request = require('supertest');
 const app = require('../src/app');
 

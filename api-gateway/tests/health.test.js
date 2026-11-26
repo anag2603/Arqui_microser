@@ -1,3 +1,5 @@
+process.env.USE_MOCKS = 'true';
+
 const request = require('supertest');
 const app = require('../src/app');
 
