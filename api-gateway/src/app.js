@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: FRONTEND_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 
 // 2. Sanitización de headers internos/sensibles para evitar suplantación desde el cliente

@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
          telefono = COALESCE(EXCLUDED.telefono, profiles.telefono),
          updated_at = NOW()
        RETURNING user_id, email, rol, nombre, telefono, created_at, updated_at`,
-      [id, email, rol, nombre, telefono]
+      [id, email, rol, nombre, telefono],
     );
 
     await invalidateProfile(id);
@@ -55,7 +55,7 @@ router.get('/:userId', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT user_id, email, rol, nombre, telefono, created_at, updated_at
        FROM profiles WHERE user_id = $1`,
-      [req.params.userId]
+      [req.params.userId],
     );
 
     if (rows.length === 0) {
