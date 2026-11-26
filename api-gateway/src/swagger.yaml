@@ -1,0 +1,49 @@
+openapi: 3.0.0
+info:
+  title: API Gateway - Sistema de Microservicios
+  version: 1.0.0
+  description: Punto de entrada único para auth-service y user-service
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /health:
+    get:
+      summary: Estado del API Gateway
+      responses:
+        '200':
+          description: Servicio activo
+  /auth/register:
+    post:
+      summary: Registrar nuevo usuario (proxy a auth-service)
+      responses:
+        '201':
+          description: Usuario creado
+  /auth/login:
+    post:
+      summary: Iniciar sesión (proxy a auth-service)
+      responses:
+        '200':
+          description: Tokens generados
+  /users/me:
+    get:
+      summary: Obtener perfil del usuario autenticado (proxy a user-service)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario
+        '401':
+          description: Token inválido o faltante
+    patch:
+      summary: Actualizar perfil del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil actualizado
