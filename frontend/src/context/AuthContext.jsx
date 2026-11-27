@@ -1,22 +1,106 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import * as authApi from '../api/authApi';
+import { setAuthHandlers } from '../api/client';
+import {
+  ACCESS_KEY,
+  REFRESH_KEY,
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  saveTokens,
+} from '../storage/tokenStorage';
+import { decodeJwt } from '../utils/jwt';
 
 const AuthContext = createContext(null);
 
-// VERSIÓN DE LA BASE: mismo contrato que la real, con comportamiento falso.
+const NOTICES = {
+  expired: 'Tu sesión expiró. Inicia sesión de nuevo.',
+  closed: 'Tu sesión fue cerrada. Inicia sesión de nuevo.',
+  inactive: 'Tu sesión se cerró por inactividad. Inicia sesión de nuevo.',
+};
+
+const EMPTY_TOKENS = { accessToken: null, refreshToken: null };
+
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [tokens, setTokens] = useState(() => ({
+    accessToken: getAccessToken(),
+    refreshToken: getRefreshToken(),
+  }));
+  const [sessionNotice, setSessionNotice] = useState(null);
+  const loggingOut = useRef(false);
+
+  // Cierra la sesión local; con "reason" deja un aviso (salvo si el usuario pulsó "Cerrar sesión")
+  const endSession = useCallback((reason) => {
+    clearTokens();
+    setTokens(EMPTY_TOKENS);
+    if (reason && !loggingOut.current) {
+      setSessionNotice(NOTICES[reason] || NOTICES.expired);
+    }
+  }, []);
+
+  // El cliente Axios nos avisa cuando renueva el token o cuando la sesión terminó sola
+  useEffect(() => {
+    setAuthHandlers({
+      onTokenRefreshed: (accessToken) => setTokens((prev) => ({ ...prev, accessToken })),
+      onSessionExpired: endSession,
+    });
+    return () => setAuthHandlers({});
+  }, [endSession]);
+
+  // Si el usuario cierra sesión en otra pestaña, esta también se entera
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === null || event.key === ACCESS_KEY || event.key === REFRESH_KEY) {
+        setTokens({ accessToken: getAccessToken(), refreshToken: getRefreshToken() });
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const register = useCallback((email, password) => authApi.register(email, password), []);
+
+  const login = useCallback(async (email, password) => {
+    const { accessToken, refreshToken } = await authApi.login(email, password);
+    saveTokens(accessToken, refreshToken);
+    setTokens({ accessToken, refreshToken });
+    setSessionNotice(null);
+  }, []);
+
+  const logout = useCallback(async () => {
+    loggingOut.current = true;
+    try {
+      if (getAccessToken()) {
+        await authApi.logout();
+      }
+    } catch {
+      // Aunque el servidor falle (red, token vencido), cerramos la sesión localmente
+    } finally {
+      clearTokens();
+      setTokens(EMPTY_TOKENS);
+      loggingOut.current = false;
+    }
+  }, []);
+
+  const clearSessionNotice = useCallback(() => setSessionNotice(null), []);
+
+  // Solo para mostrar en pantalla: nunca para decidir seguridad
+  const user = useMemo(() => {
+    const claims = tokens.accessToken ? decodeJwt(tokens.accessToken) : null;
+    return claims ? { userId: claims.userId, email: claims.email, rol: claims.rol } : null;
+  }, [tokens.accessToken]);
 
   const value = useMemo(
     () => ({
-      isAuthenticated,
-      user: isAuthenticated ? { userId: '1', email: 'prueba@ejemplo.com', rol: 'user' } : null,
-      sessionNotice: null,
-      clearSessionNotice: () => {},
-      register: async () => ({ userId: '1' }),
-      login: async () => setIsAuthenticated(true),
-      logout: async () => setIsAuthenticated(false),
+      isAuthenticated: Boolean(tokens.accessToken && tokens.refreshToken),
+      user,
+      sessionNotice,
+      clearSessionNotice,
+      register,
+      login,
+      logout,
     }),
-    [isAuthenticated],
+    [tokens, user, sessionNotice, clearSessionNotice, register, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
