@@ -10,7 +10,7 @@ const userId = process.argv[4] || '1';
 const token = jwt.sign(
   { userId, email: 'prueba@ejemplo.com', rol: 'user' },
   process.env.JWT_SECRET,
-  { expiresIn, jwtid: jti }
+  { expiresIn, jwtid: jti },
 );
 
 console.log(token);

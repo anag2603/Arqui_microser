@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: FRONTEND_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 
 // 2. Sanitización de headers internos/sensibles para evitar suplantación desde el cliente
@@ -35,7 +35,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'api-gateway' });
 });
 
-const swaggerDocument = YAML.load(path.resolve(__dirname, './swagger.yaml'));
+const swaggerDocument = YAML.load(path.resolve(__dirname, '../../docs/openapi.yaml'));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // 4. Bloquear acceso externo directo a rutas internas
