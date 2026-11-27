@@ -21,7 +21,7 @@ router.get('/me', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT user_id, email, rol, nombre, telefono, created_at, updated_at
        FROM profiles WHERE user_id = $1`,
-      [userId]
+      [userId],
     );
 
     if (rows.length === 0) {
@@ -53,7 +53,7 @@ async function updateMe(req, res) {
            updated_at = NOW()
        WHERE user_id = $3
        RETURNING user_id, email, rol, nombre, telefono, created_at, updated_at`,
-      [nombre ?? null, telefono ?? null, userId]
+      [nombre ?? null, telefono ?? null, userId],
     );
 
     if (rows.length === 0) {

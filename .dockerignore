@@ -6,5 +6,4 @@
 **/.env.*
 .git
 .gitignore
-docs
 tests
